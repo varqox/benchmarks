@@ -102,14 +102,42 @@ inline auto get_foo() noexcept {
 	return foo1;
 }
 
+struct Polimorph {
+	virtual void operator()() const { abort(); }
+};
+
+struct Poli1 : Polimorph { void operator()() const { foo1(); } };
+struct Poli2 : Polimorph { void operator()() const { foo2(); } };
+struct Poli3 : Polimorph { void operator()() const { foo3(); } };
+struct Poli4 : Polimorph { void operator()() const { foo4(); } };
+struct Poli5 : Polimorph { void operator()() const { foo5(); } };
+struct Poli6 : Polimorph { void operator()() const { foo6(); } };
+
+inline Polimorph* get_poli() noexcept {
+	switch (rand() % 6) {
+		case 0: return new Poli1;
+		case 1: return new Poli2;
+		case 2: return new Poli3;
+		case 3: return new Poli4;
+		case 4: return new Poli5;
+		case 5: return new Poli6;
+	}
+
+	return new Poli1;
+}
+
 int main() {
 	ios::sync_with_stdio(false);
 	cin.tie(nullptr);
 
 	vector<void(*)()> u;
 	vector<function<void()>> v;
+	vector<function<void()>> v1;
+	vector<Polimorph*> w;
 	map<int, void(*)()> l;
 	map<int, function<void()>> m;
+	map<int, function<void()>> m1;
+	map<int, Polimorph*> n;
 
 	constexpr int N = 300;
 	auto fillu = [&] {
@@ -126,6 +154,27 @@ int main() {
 			v[i] = get_foo();
 	};
 
+	auto fillv1 = [&] {
+		v1 = {};
+		v1.resize(N);
+		REP (i, N)
+			switch (rand() % 6) {
+				case 0: v1[i] = []{ cout << "foo1" << endl; }; break;
+				case 1: v1[i] = []{ cout << "foo2" << endl; }; break;
+				case 2: v1[i] = []{ cout << "foo3" << endl; }; break;
+				case 3: v1[i] = []{ cout << "foo4" << endl; }; break;
+				case 4: v1[i] = []{ cout << "foo5" << endl; }; break;
+				case 5: v1[i] = []{ cout << "foo6" << endl; }; break;
+			}
+	};
+
+	auto fillw = [&] {
+		w = {};
+		w.resize(N);
+		REP (i, N)
+			w[i] = get_poli();
+	};
+
 	auto filll = [&] {
 		l = {};
 		REP (i, N)
@@ -136,6 +185,25 @@ int main() {
 		m = {};
 		REP (i, N)
 			m[i] = get_foo();
+	};
+
+	auto fillm1 = [&] {
+		m1 = {};
+		REP (i, N)
+			switch (rand() % 6) {
+				case 0: m1[i] = []{ cout << "foo1" << endl; }; break;
+				case 1: m1[i] = []{ cout << "foo2" << endl; }; break;
+				case 2: m1[i] = []{ cout << "foo3" << endl; }; break;
+				case 3: m1[i] = []{ cout << "foo4" << endl; }; break;
+				case 4: m1[i] = []{ cout << "foo5" << endl; }; break;
+				case 5: m1[i] = []{ cout << "foo6" << endl; }; break;
+			}
+	};
+
+	auto filln = [&] {
+		n = {};
+		REP (i, N)
+			n[i] = get_poli();
 	};
 
 	auto useu = [&] {
@@ -154,6 +222,22 @@ int main() {
 		}
 	};
 
+	auto usev1 = [&] {
+		REP (i, N / 3) {
+			int k = rand() % N;
+			if (k < N) // Real life check
+				v1[k]();
+		}
+	};
+
+	auto usew = [&] {
+		REP (i, N / 3) {
+			int k = rand() % N;
+			if (k < N) // Real life check
+				(*w[k])();
+		}
+	};
+
 	auto usel = [&] {
 		REP (i, N / 3)
 			l[rand() % N]();
@@ -162,6 +246,16 @@ int main() {
 	auto usem = [&] {
 		REP (i, N / 3)
 			m[rand() % N]();
+	};
+
+	auto usem1 = [&] {
+		REP (i, N / 3)
+			m1[rand() % N]();
+	};
+
+	auto usen = [&] {
+		REP (i, N / 3)
+			(*n[rand() % N])();
 	};
 
 	auto useif = [&] {
@@ -479,35 +573,55 @@ int main() {
 		REP (i, (int)iterations)
 			func();
 
-		cerr << "### " << name << ": " << fixed << tm.time() / iterations << " s (" << iterations << " iterations) ###\n" << flush;
+		cerr << "### " << name << ":\t" << fixed << tm.time() / iterations << " s (" << iterations << " iterations) ###\n" << flush;
 	};
 
 	benchmark(fillu, "fill u", 1);
 	benchmark(fillv, "fill v", 1);
+	benchmark(fillv1, "fill v1", 1);
+	benchmark(fillw, "fill w", 1);
 	benchmark(filll, "fill l", 1);
 	benchmark(fillm, "fill m", 1);
+	benchmark(fillm1, "fill m1", 1);
+	benchmark(filln, "fill n", 1);
 	cerr << nl;
 	benchmark(fillu, "fill u", 100);
 	benchmark(fillv, "fill v", 100);
+	benchmark(fillv1, "fill v1", 100);
+	benchmark(fillw, "fill w", 100);
 	benchmark(filll, "fill l", 100);
 	benchmark(fillm, "fill m", 100);
+	benchmark(fillm1, "fill m1", 100);
+	benchmark(filln, "fill n", 100);
 	cerr << nl;
 	benchmark(useu, "use u", 10);
 	benchmark(usev, "use v", 10);
+	benchmark(usev1, "use v1", 10);
+	benchmark(usew, "use w", 10);
 	benchmark(usel, "use l", 10);
 	benchmark(usem, "use m", 10);
+	benchmark(usem1, "use m1", 10);
+	benchmark(usen, "use n", 10);
 	benchmark(useif, "use if", 10);
 	cerr << nl;
 	benchmark(useu, "use u", 1);
 	benchmark(usev, "use v", 1);
+	benchmark(usev1, "use v1", 1);
+	benchmark(usew, "use w", 1);
 	benchmark(usel, "use l", 1);
 	benchmark(usem, "use m", 1);
+	benchmark(usem1, "use m1", 1);
+	benchmark(usen, "use n", 1);
 	benchmark(useif, "use if", 1);
 	cerr << nl;
 	benchmark(useu, "use u", 10000);
 	benchmark(usev, "use v", 10000);
+	benchmark(usev1, "use v1", 10000);
+	benchmark(usew, "use w", 10000);
 	benchmark(usel, "use l", 10000);
 	benchmark(usem, "use m", 10000);
+	benchmark(usem1, "use m1", 10000);
+	benchmark(usen, "use n", 10000);
 	benchmark(useif, "use if", 10000);
 
 	return 0;
